@@ -1,12 +1,47 @@
 Config = {}
 
---Config.MinCops = 3 --Minimum cops on duty, TODO
-Config.CopsChance = 1.0 --Chance of cops being called, ranges from 0.0 to 1.0
+Config.MinCops = 1 --Minimum cops on duty, TODO
+Config.CopsChance = 0.5 --Chance of cops being called, ranges from 0.0 to 1.0
+Config.Dispatch = 'ps-dispatch'
 
-Config.ScrapTime = 20000 --Time in miliseconds to steal scraps
---Config.Cooldown = 20000 --Time in miliseconds before a player scan steal scraps again, TODO:
+Config.ScrapTime = 60000 --Time in miliseconds to steal scraps
+Config.ItemNeeded = 'drill'
 
---Config.RequiredItem = 'oxycutter'
+
+Config.DispatchCaller = {
+    'John',
+    'James',
+    'Betty',
+    'Karen',
+    'Mr Singh',
+    'Dennis',
+    'Frank',
+    'Peggy',
+    'Mildred',
+    'Ethel',
+    'Gladys',
+    'Kevin',
+    'Mohammed',
+    'Yusuf',
+    'Ming',
+    'Mrs Wong',
+}
+
+Config.DispatchMsg = {
+    'Help, these bastards are stealing again',
+    'Filthy thieves stealing all the metal, tell em to get a bloody job!',
+    'Grubby mongrels pinching copper, DO SOMETHING!',
+    'These idiots are thieving from my building again!',
+    'Someone is trying to steal scrap materials using an oxy-cutter',
+    'I am on the neighbourhood watch and saw a person stealing scrap materials',
+    'I think I saw someone stealing copper piping',
+    'Theres a dodgy looking person cutting bits off the building, maybe for scrap metal?',
+    'I think I saw someone doing something they shouldnt be',
+    'Theres a thief going around the neighbourhood stealing shit',
+    'Im the security guard for the area and someones stealing parts from my building',
+    'Kids are stealing and using foul language, please stop them',
+    'Someone across the road is stealing, I tried to stop them but they told me to piss off'
+}
 
 Config.ScrapObjects = {
 
