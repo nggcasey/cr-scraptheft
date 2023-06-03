@@ -4,8 +4,8 @@ Config.MinCops = 1 --Minimum cops on duty, TODO
 Config.CopsChance = 0.5 --Chance of cops being called, ranges from 0.0 to 1.0
 Config.Dispatch = 'ps-dispatch'
 
-Config.ScrapTime = 60000 --Time in miliseconds to steal scraps
-Config.ItemNeeded = 'drill'
+Config.ScrapTime = 30000 --Time in miliseconds to steal scraps
+Config.ItemNeeded = 'oxycutter'
 
 
 Config.DispatchCaller = {

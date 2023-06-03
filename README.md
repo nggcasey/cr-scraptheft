@@ -1,20 +1,34 @@
 # am-scraptheft
 
-WORK IN PROGRESS
+This script allows players to steal scrap materials from various objects on the map (i.e. air conditioning units).
 
-Dependencies:
+**Requirements**
 
 -QBCore Framework
 -qb-target
--ps-dispatch
+-ps-dispatch (optional for police alerts)
 
-A script that gives you the ability the ability to steal scrap materials from various objects (i.e. aircon units on the map! 
-In the config, you can set what objects pay out what materials (i.e. copper etc), and how much of those materials each pays out.
+**Features**
 
-You can pick any items from qb-core/shared/items.lua
+-Highly configurable
+-Protected against LUA injectors: Uses a server generated randomised token to authenticate before sending rewards to the clients (not tested)
+-Support for ps-dispatch
+-Customisable random dispatch messages and callers
+-Configurable rewards for each object
 
-Note:
 
-This is my first actual resource and I am still learning, so if you have any constructive feedback, thoughts or suggestions please let me know or open a pull request.
 
-Feel free to modify, adapt and share this. If you like it, let me know too :D
+**Installation**
+
+* Drag & drop this resource into your resource folder
+* In qb-core/shared/items.lua, add this code under Tools
+```
+
+	['oxycutter'] 				 	 = {['name'] = 'oxycutter', 			    	['label'] = 'Oxy Cutter', 				['weight'] = 10000, 	['type'] = 'item', 		['image'] = 'oxycutter.png', 			['unique'] = false, 	['useable'] = false, 	['shouldClose'] = false,   ['combinable'] = nil,   ['description'] = 'A handy tool for cutting metal'},
+```
+
+* Add the oxycutter.png from the images folder into in qb-inventory/html/images
+
+**Notes**
+
+This is my first actual resource and I am still learning, so if you have any constructive feedback, thoughts or suggestions please let me know or open a pull request. Feel free to modify, adapt and share this.
