@@ -4,17 +4,16 @@ This script allows players to steal scrap materials from various objects on the 
 
 **Requirements**
 
--QBCore Framework
--qb-target
--ps-dispatch (optional for police alerts)
+* QBCore Framework 
+* qb-target
+* ps-dispatch (optional for police alerts)
 
 **Features**
 
--Highly configurable
--Protected against LUA injectors: Uses a server generated randomised token to authenticate before sending rewards to the clients (not tested)
--Support for ps-dispatch
--Customisable random dispatch messages and callers
--Configurable rewards for each object
+* Highly configurable
+* Protected against LUA injectors: Uses a server generated randomised token to authenticate before sending rewards to the clients (not tested) -
+* Support for ps-dispatch
+* Customisable random dispatch messages and callers -Configurable rewards for each object
 
 
 
