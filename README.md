@@ -15,6 +15,9 @@ This script allows players to steal scrap materials from various objects on the 
 * Support for ps-dispatch
 * Customisable random dispatch messages and callers -Configurable rewards for each object
 
+**Preview**
+https://youtu.be/aHsVkWgBlr8
+
 
 
 **Installation**
