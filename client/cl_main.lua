@@ -7,7 +7,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 --====================================================================================
 
 RegisterNetEvent('am-scraptheft:steal',function(scrapObj, entity, securityToken)
-    local pos = GetEntityCoords(PlayerId())
+    local pos = GetEntityCoords(PlayerPedId())
     local clientToken = securityToken
     local hasItem = exports['qb-inventory']:HasItem(Config.ItemNeeded, 1)
 
