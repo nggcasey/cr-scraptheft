@@ -17,11 +17,13 @@ RegisterNetEvent('am-scraptheft:steal',function(scrapObj, entity, securityToken)
             if copCount >= Config.MinCops then
 
                 --Alert Cops
-                if Config.Dispatch == 'ps-dispatch' then
-                    local chance = Config.CopsChance
-                    local randomNumber = math.random()
+                local chance = Config.CopsChance
+                local randomNumber = math.random()
+                print('Random Number: '..randomNumber)
 
-                    if randomNumber <= chance then
+                if randomNumber <= chance then
+
+                    if Config.Dispatch == 'ps-dispatch' then
                         exports["ps-dispatch"]:CustomAlert({
                             coords = {
                                 x = pos.x,
@@ -41,8 +43,30 @@ RegisterNetEvent('am-scraptheft:steal',function(scrapObj, entity, securityToken)
                             scale = 1.0,
                             length = 3,
                         })
+                    elseif Config.Dispatch =='cd_dispatch' then
+                        local data = exports['cd_dispatch']:GetPlayerInfo()
+                        TriggerServerEvent('cd_dispatch:AddNotification', {
+                            job_table = {'police', },
+                            coords = data.coords,
+                            title = 'Scrap Material Theft',
+                            message = 'Caller: '..Config.DispatchCaller[math.random(1,#Config.DispatchCaller)]..' - Location: '..data.street..' - '..Config.DispatchMsg[math.random(1,#Config.DispatchMsg)],
+                            flash = 0,
+                            unique_id = data.unique_id,
+                            sound = 1,
+                            blip = {
+                                sprite = 431,
+                                scale = 1.2,
+                                colour = 3,
+                                flashes = false,
+                                text = 'Scrap Material Theft',
+                                time = 5,
+                                radius = 10,
+                            }
+                        })
                     end
+
                 end
+
 
                 --Progress Bar
                 QBCore.Functions.Progressbar('stealingscraps', 'Stealing Scraps', Config.ScrapTime, false, true,
