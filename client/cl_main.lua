@@ -6,13 +6,13 @@ local QBCore = exports['qb-core']:GetCoreObject()
 ------------------------------------------
 --====================================================================================
 
-RegisterNetEvent('am-scraptheft:steal',function(scrapObj, entity, securityToken)
+RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
     local pos = GetEntityCoords(PlayerPedId())
     local clientToken = securityToken
     local hasItem = exports['qb-inventory']:HasItem(Config.ItemNeeded, 1)
 
     if hasItem then
-        QBCore.Functions.TriggerCallback('am-scraptheft:GetCops', function(copCount)
+        QBCore.Functions.TriggerCallback('cr-scraptheft:GetCops', function(copCount)
 
             if copCount >= Config.MinCops then
 
@@ -82,8 +82,8 @@ RegisterNetEvent('am-scraptheft:steal',function(scrapObj, entity, securityToken)
                     {}, {}, function()
                         -- This code runs if the progress bar completes successfully
 
-                        TriggerServerEvent('am-scraptheft:removescrap', entity)
-                        TriggerServerEvent('am-scraptheft:reward', scrapObj, clientToken)
+                        TriggerServerEvent('cr-scraptheft:removescrap', entity)
+                        TriggerServerEvent('cr-scraptheft:reward', scrapObj, clientToken)
 
                         ClearPedTasks(PlayerPedId())
 
@@ -122,7 +122,7 @@ CreateThread(function()
                     label = 'Steal Scraps',
                     --item = Config.RequiredItem, - TODO:
                     action = function(entity)
-                        TriggerServerEvent('am-scraptheft:checkifscrapped', scrapObj,entity)
+                        TriggerServerEvent('cr-scraptheft:checkifscrapped', scrapObj,entity)
 
                     end
                 },

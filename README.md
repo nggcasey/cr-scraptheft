@@ -1,4 +1,4 @@
-# am-scraptheft
+# cr-scraptheft
 
 This script allows players to steal scrap materials from various objects on the map (i.e. air conditioning units).
 
