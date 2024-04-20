@@ -8,7 +8,7 @@ local securityToken = math.random(1,99999999)
 ------------------------------------------
 --====================================================================================
 
-QBCore.Functions.CreateCallback('am-scraptheft:GetCops', function(source, cb)
+QBCore.Functions.CreateCallback('cr-scraptheft:GetCops', function(source, cb)
 	local amount = 0
     local players = QBCore.Functions.GetQBPlayers()
     for _, v in pairs(players) do
@@ -26,11 +26,11 @@ end)
 --====================================================================================
 
 
-RegisterNetEvent('am-scraptheft:removescrap', function(entity)
+RegisterNetEvent('cr-scraptheft:removescrap', function(entity)
 	table.insert(scrappedObj, entity)
 end)
 
-RegisterNetEvent('am-scraptheft:checkifscrapped', function(scrapObj, entity)
+RegisterNetEvent('cr-scraptheft:checkifscrapped', function(scrapObj, entity)
 	local src = source
 	local isScrapped = false
 
@@ -45,13 +45,13 @@ RegisterNetEvent('am-scraptheft:checkifscrapped', function(scrapObj, entity)
 	if isScrapped then
 		TriggerClientEvent('QBCore:Notify', src, 'Thieves have stolen all of the valuable materials from this!', 'error', 5000)
 	else
-		TriggerClientEvent('am-scraptheft:steal', src, scrapObj, entity, securityToken)
+		TriggerClientEvent('cr-scraptheft:steal', src, scrapObj, entity, securityToken)
 	end
 
 end)
 
 
-RegisterNetEvent('am-scraptheft:reward', function(scrapObj, clientToken)
+RegisterNetEvent('cr-scraptheft:reward', function(scrapObj, clientToken)
 	local src = source
 	local Player = QBCore.Functions.GetPlayer(src)
 
