@@ -12,6 +12,7 @@ RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
     local hasItem = exports['qb-inventory']:HasItem(Config.ItemNeeded, 1)
 
     if hasItem then
+
         QBCore.Functions.TriggerCallback('cr-scraptheft:GetCops', function(copCount)
 
             if copCount >= Config.MinCops then
@@ -19,7 +20,6 @@ RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
                 --Alert Cops
                 local chance = Config.CopsChance
                 local randomNumber = math.random()
-                print('Random Number: '..randomNumber)
 
                 if randomNumber <= chance then
 
@@ -69,7 +69,32 @@ RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
 
 
                 --Progress Bar
-                QBCore.Functions.Progressbar('stealingscraps', 'Stealing Scraps', Config.ScrapTime, false, true,
+
+                if Config.Framework == 'qbx' then
+
+                    if lib.progressBar({
+                        duration = Config.ScrapTime,
+                        label = 'Stealing Scrap',
+                        useWhileDead = false,
+                        canCancel = true,
+                        anim = {
+                            scenario = 'WORLD_HUMAN_WELDING',
+                            duration = Config.ScrapTime,
+                        },
+                        disable = {
+                            move = true
+                        }
+                    })
+                    then
+                        TriggerServerEvent('cr-scraptheft:removescrap', entity)
+                        TriggerServerEvent('cr-scraptheft:reward', scrapObj, clientToken)
+
+                        ClearPedTasks(PlayerPedId())
+                    end
+                end
+
+                if Config.Framework == 'qb' then
+                    QBCore.Functions.Progressbar('stealingscraps', 'Stealing Scraps', Config.ScrapTime, false, true,
                     {
                         disableMovement = true,
                         disableCarMovement = true,
@@ -90,7 +115,9 @@ RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
                     end, function()
                         -- This code runs if the progress bar gets cancelled
                         ClearPedTasks(PlayerPedId())
-                end)
+                    end)
+                end
+
 
             else
                 QBCore.Functions.Notify('Not enough cops online', 'error', 5000)
