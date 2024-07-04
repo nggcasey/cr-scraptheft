@@ -8,16 +8,29 @@ local securityToken = math.random(1,99999999)
 ------------------------------------------
 --====================================================================================
 
-QBCore.Functions.CreateCallback('cr-scraptheft:GetCops', function(source, cb)
-	local amount = 0
-    local players = QBCore.Functions.GetQBPlayers()
-    for _, v in pairs(players) do
-        if v.PlayerData.job.name == 'police' and v.PlayerData.job.onduty then
-			amount = amount + 1
-		end
-	end
-	cb(amount)
-end)
+if Config.Framework == 'qb' then
+    -- Old qb framework approach
+    QBCore.Functions.CreateCallback('cr-scraptheft:GetCops', function(source, cb)
+        local amount = 0
+        local players = QBCore.Functions.GetQBPlayers()
+        for _, v in pairs(players) do
+            if v.PlayerData.job.name == 'police' and v.PlayerData.job.onduty then
+                amount = amount + 1
+            end
+        end
+        cb(amount)
+    end)
+	elseif Config.Framework == 'qbx' then
+		-- New qbx framework approach
+		QBCore.Functions.CreateCallback('cr-scraptheft:GetCops', function(source, cb)
+			local copCount = exports.qbx_core:GetDutyCountType('leo')
+			cb(copCount)
+		end)
+	else
+		-- Handle default or invalid configuration
+		print("Invalid or unspecified framework in Config.Framework.")
+end
+
 
 --====================================================================================
 ------------------------------------------
