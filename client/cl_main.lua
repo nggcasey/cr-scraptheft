@@ -36,7 +36,7 @@ RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
                             description = "Scrap Material Theft",
                             recipientList = 'police',
                             gender = true,
-                            name = 'Caller: '..Config.DispatchCaller[math.random(1,#Config.DispatchCaller)]..' - '..Config.DispatchMsg[math.random(1,#Config.DispatchMsg)],
+                            name = Config.DispatchCaller[math.random(1,#Config.DispatchCaller)]..' - '..Config.DispatchMsg[math.random(1,#Config.DispatchMsg)],
                             radius = 0,
                             sprite = 60,
                             color = 3,
