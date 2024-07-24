@@ -85,11 +85,33 @@ RegisterNetEvent('cr-scraptheft:reward', function(scrapObj, clientToken)
             local rewardItemAmount = math.random(rewardItemMin, rewardItemMax)
 
             -- Add the item to the player's inventory
-            Player.Functions.AddItem(rewardItem.item, rewardItemAmount)
-            TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[rewardItem.item])
+            if Config.Framework == 'qb' then
+                local canAdd = exports['qb-inventory']:CanAddItem(src, rewardItem.item, rewardItemAmount)
+                if canAdd then
+                    Player.Functions.AddItem(rewardItem.item, rewardItemAmount)
+                    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[rewardItem.item])
 
-            -- Add reward details to the log table
-            table.insert(rewardsGiven, string.format("%s x%d", rewardItem.item, rewardItemAmount))
+                    -- Add reward details to the log table
+                    table.insert(rewardsGiven, string.format("%s x%d", rewardItem.item, rewardItemAmount))
+                else
+                    TriggerClientEvent('QBCore:Notify', src, 'You cannot carry anymore items', 'error', 5000)
+                    return
+                end
+            end
+
+            if Config.Framework == 'qbx' then
+                local canAdd = exports.ox_inventory:CanCarryItem(src, rewardItem.item, rewardItemAmount)
+                if canAdd then
+                    exports.ox_inventory:AddItem(src, rewardItem.item, rewardItemAmount)
+
+                    -- Add reward details to the log table
+                    table.insert(rewardsGiven, string.format("%s x%d", rewardItem.item, rewardItemAmount))
+                else
+                    exports.qbx_core:Notify(src, 'You cannot carry anymore items', 'error', 5000)
+                end
+
+            end
+
         end
 
         -- Retrieve player details
