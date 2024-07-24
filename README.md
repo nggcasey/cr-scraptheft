@@ -4,8 +4,7 @@ This script allows players to steal scrap materials from various objects on the 
 
 **Requirements**
 
-* QBCore Framework 
-* qb-target
+* QBCore or Qbox Framework
 * ps-dispatch (optional for police alerts)
 
 **Features**
