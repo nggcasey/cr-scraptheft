@@ -2,8 +2,8 @@ fx_version 'cerulean'
 game 'gta5'
 
 author 'Casey Reed'
-description 'AM Scrap Theft'
-version '1.0.0'
+description 'Scrap Theft'
+version '2.0.0'
 
 client_scripts {
     'client/*'
@@ -14,7 +14,7 @@ server_scripts {
 }
 
 shared_scripts {
-    'config.lua',
+    'shared/*',
     '@ox_lib/init.lua'
 }
 
