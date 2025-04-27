@@ -31,7 +31,7 @@ return{
     --TODO: Framework - For now, only supporting qbx cos I can't be assed doing anything else - Casey
 
     ScrapTime = 5, -- seconds
-    RequiredItem = 'lockpick', --Only supporting ox_inventory, feel free to submit a PR if you want more.
+    RequiredItem = 'oxycutter', --Only supporting ox_inventory, feel free to submit a PR if you want more.
     ScrapRadius = 0.5, --Dont touch unless you know what your doing
 
     SkillCheck = {
