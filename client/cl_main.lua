@@ -36,7 +36,6 @@ local function startStealing(data)
                     }
                 })
                 then
-                    Utils.Notify("You managed to steal scraps")
                     Utils.AlertCops()
                     TriggerServerEvent('cr-scraptheft:server:requestreward', data)
 
