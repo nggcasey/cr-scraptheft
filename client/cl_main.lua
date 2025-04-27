@@ -1,162 +1,65 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+local Config = require 'config.sh_config'
 
---====================================================================================
-------------------------------------------
---                EVENTS            --
-------------------------------------------
---====================================================================================
+local modelNames = {} --Table of model names to pass to ox_target
 
-RegisterNetEvent('cr-scraptheft:steal',function(scrapObj, entity, securityToken)
-    local pos = GetEntityCoords(PlayerPedId())
-    local clientToken = securityToken
-    local hasItem = exports['qb-inventory']:HasItem(Config.ItemNeeded, 1)
+for modelName in pairs(Config.ScrapObjects) do
+    table.insert(modelNames, modelName)
+end
 
-    if hasItem then
+local function startStealing(data)
+    local model = GetEntityModel(data.entity)
+    local ped = PlayerPedId()
+    data.model = model
+    data.coords = GetEntityCoords(data.entity, false)
 
-        QBCore.Functions.TriggerCallback('cr-scraptheft:GetCops', function(copCount)
+    TaskTurnPedToFaceEntity(ped, data.entity)
 
-            if copCount >= Config.MinCops then
+    lib.callback('cr-scraptheft:checkIfScrapped', false, function(success)
+        if success then
 
-                --Alert Cops
-                local chance = Config.CopsChance
-                local randomNumber = math.random()
+            --Skill Check
+            local skillCheckPass = lib.skillCheck(Config.SkillCheck.difficulty, Config.SkillCheck.inputs)
+            if skillCheckPass then
 
-                if randomNumber <= chance then
-
-                    if Config.Dispatch == 'ps-dispatch' then
-                        exports["ps-dispatch"]:CustomAlert({
-                            coords = {
-                                x = pos.x,
-                                y = pos.y,
-                                z = pos.z
-                            },
-                            message = "Scrap Material Theft",
-                            dispatchCode = "000",
-                            priority = 2,
-                            description = "Scrap Material Theft",
-                            recipientList = 'police',
-                            gender = true,
-                            name = Config.DispatchCaller[math.random(1,#Config.DispatchCaller)]..' - '..Config.DispatchMsg[math.random(1,#Config.DispatchMsg)],
-                            radius = 0,
-                            sprite = 60,
-                            color = 3,
-                            scale = 1.0,
-                            length = 3,
-                        })
-                    elseif Config.Dispatch =='cd_dispatch' then
-                        local data = exports['cd_dispatch']:GetPlayerInfo()
-                        TriggerServerEvent('cd_dispatch:AddNotification', {
-                            job_table = {'police', },
-                            coords = data.coords,
-                            title = 'Scrap Material Theft',
-                            message = 'Caller: '..Config.DispatchCaller[math.random(1,#Config.DispatchCaller)]..' - Location: '..data.street..' - '..Config.DispatchMsg[math.random(1,#Config.DispatchMsg)],
-                            flash = 0,
-                            unique_id = data.unique_id,
-                            sound = 1,
-                            blip = {
-                                sprite = 431,
-                                scale = 1.2,
-                                colour = 3,
-                                flashes = false,
-                                text = 'Scrap Material Theft',
-                                time = 5,
-                                radius = 10,
-                            }
-                        })
-                    end
-
-                end
-
-
-                --Progress Bar
-
-                if Config.Framework == 'qbx' then
-
-                    if lib.progressBar({
-                        duration = Config.ScrapTime,
-                        label = 'Stealing Scrap',
-                        useWhileDead = false,
-                        canCancel = true,
-                        anim = {
-                            scenario = 'WORLD_HUMAN_WELDING',
-                            duration = Config.ScrapTime,
-                        },
-                        disable = {
-                            move = true
-                        }
-                    })
-                    then
-                        TriggerServerEvent('cr-scraptheft:removescrap', entity)
-                        TriggerServerEvent('cr-scraptheft:reward', scrapObj, clientToken)
-
-                        ClearPedTasks(PlayerPedId())
-                    end
-                end
-
-                if Config.Framework == 'qb' then
-                    QBCore.Functions.Progressbar('stealingscraps', 'Stealing Scraps', Config.ScrapTime, false, true,
-                    {
-                        disableMovement = true,
-                        disableCarMovement = true,
-                        disableMouse = false,
-                        disableCombat = true
+                --Start progress bar
+                if lib.progressBar({
+                    duration = Config.ScrapTime * 1000,
+                    label = 'Stealing Scrap',
+                    useWhileDead = false,
+                    canCancel = true,
+                    anim = {
+                        scenario = 'WORLD_HUMAN_WELDING',
+                        duration = Config.ScrapTime * 1000,
                     },
-                    {
-                        task = 'WORLD_HUMAN_WELDING',
-                    },
-                    {}, {}, function()
-                        -- This code runs if the progress bar completes successfully
+                    disable = {
+                        move = true
+                    }
+                })
+                then
+                    Utils.Notify("You passed the skill and progress yay")
+                    Utils.AlertCops()
+                    TriggerServerEvent('cr-scraptheft:server:requestreward', data)
 
-                        TriggerServerEvent('cr-scraptheft:removescrap', entity)
-                        TriggerServerEvent('cr-scraptheft:reward', scrapObj, clientToken)
-
-                        ClearPedTasks(PlayerPedId())
-
-                    end, function()
-                        -- This code runs if the progress bar gets cancelled
-                        ClearPedTasks(PlayerPedId())
-                    end)
+                    ClearPedTasks(PlayerPedId())
                 end
-
-
             else
-                QBCore.Functions.Notify('Not enough cops online', 'error', 5000)
+                Utils.Notify("You passed failed the skill check boo")
             end
 
-        end)
+        else
+            Utils.Notify("This has already been scrapped")
+        end
+    end, data)
 
-    else
-        QBCore.Functions.Notify('You need a '..Config.ItemNeeded..' to do this ', 'error', 5000)
+end
+
+
+exports.ox_target:addModel(modelNames, {
+    distance = Config.TargetDistance,
+    icon = 'fas fa-tools',
+    label = 'Steal scraps',
+    items = Config.RequiredItem,
+    onSelect = function(data)
+        startStealing(data)
     end
-
-end)
-
---====================================================================================
-------------------------------------------
---                Threads             --
-------------------------------------------
---====================================================================================
-
---Target Exports: Get all the objects from the config and add them to qb-target
-CreateThread(function()
-    for i=1, #Config.ScrapObjects do
-        local scrapObj = Config.ScrapObjects[i]
-        exports['qb-target']:AddTargetModel(scrapObj.name, {
-            options = {
-                {
-                    type = 'client',
-                    icon = 'fa fa-print',
-                    label = 'Steal Scraps',
-                    --item = Config.RequiredItem, - TODO:
-                    action = function(entity)
-                        TriggerServerEvent('cr-scraptheft:checkifscrapped', scrapObj,entity)
-
-                    end
-                },
-            },
-            distance = 1.5,
-        })
-    end
-end)
-
---
+})
