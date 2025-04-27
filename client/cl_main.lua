@@ -36,14 +36,14 @@ local function startStealing(data)
                     }
                 })
                 then
-                    Utils.Notify("You passed the skill and progress yay")
+                    Utils.Notify("You managed to steal scraps")
                     Utils.AlertCops()
                     TriggerServerEvent('cr-scraptheft:server:requestreward', data)
 
                     ClearPedTasks(PlayerPedId())
                 end
             else
-                Utils.Notify("You passed failed the skill check boo")
+                Utils.Notify("You are not a very good thief")
             end
 
         else
