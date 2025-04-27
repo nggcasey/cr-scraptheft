@@ -25,7 +25,7 @@ return{
 
     NotifySystem = 1, --1 = ox_lib, 2 = okokNotify
     ScrapResetTime = 10, -- Time (in minutes) after which scrapped objects can be scrapped again
-    MinCops = 0,--Minimum cops on duty
+    --MinCops = 0,--Minimum cops on duty TODO: Casey
     CopsChance = 1.0, --Chance of cops being called, ranges from 0.0 to 1.0
     Dispatch = 'ps-dispatch', --Choose 'ps-dispatch' or 'cd_dispatch'
     --TODO: Framework - For now, only supporting qbx cos I can't be assed doing anything else - Casey
