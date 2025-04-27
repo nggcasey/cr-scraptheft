@@ -6,15 +6,15 @@ description 'Scrap Theft'
 version '2.0.0'
 
 client_scripts {
-    'client/*'
+    'client/*.lua'
 }
 
 server_scripts {
-    'server/*'
+    'server/*.lua'
 }
 
 shared_scripts {
-    'shared/*',
+    'config/*.lua',
     '@ox_lib/init.lua'
 }
 
