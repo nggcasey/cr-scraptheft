@@ -36,7 +36,7 @@ local function startStealing(data)
                     }
                 })
                 then
-                    Utils.AlertCops()
+                    Utils.AlertCops(data.coords)
                     TriggerServerEvent('cr-scraptheft:server:requestreward', data)
 
                     ClearPedTasks(PlayerPedId())

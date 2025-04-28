@@ -26,11 +26,12 @@ return{
     NotifySystem = 1, --1 = ox_lib, 2 = okokNotify
     ScrapResetTime = 10, -- Time (in minutes) after which scrapped objects can be scrapped again
     --MinCops = 0,--Minimum cops on duty TODO: Casey
-    CopsChance = 1.0, --Chance of cops being called, ranges from 0.0 to 1.0
+    CopsChance = 0.15, --Chance of cops being called, ranges from 0.0 to 1.0
+    AlertCooldown = 60000, -- Cooldown period in milliseconds
     Dispatch = 'ps-dispatch', --Choose 'ps-dispatch' or 'cd_dispatch'
     --TODO: Framework - For now, only supporting qbx cos I can't be assed doing anything else - Casey
 
-    ScrapTime = 5, -- seconds
+    ScrapTime = 15, -- seconds
     RequiredItem = 'oxycutter', --Only supporting ox_inventory, feel free to submit a PR if you want more.
     ScrapRadius = 0.5, --Dont touch unless you know what your doing
 
@@ -38,7 +39,7 @@ return{
         -- Skillcheck difficulty settings
         -- You can set 'easy', 'medium', or 'hard' in any order and quantity
         -- More info: https://overextended.dev/ox_lib/Modules/Interface/Client/skillcheck
-        difficulty = { 'easy', 'easy'},
+        difficulty = { 'easy', 'medium',},
 
         -- Keys that will be used for the skillcheck minigame
         -- You can set this to any combination of keys
@@ -56,10 +57,14 @@ return{
             minRewards = 2,
             maxRewards = 3,
             rewards = {
-                { item = 'plastic', min = 1, max = 2 },
+                { item = 'plastic', min = 1, max = 6 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [605277920] = { -- prop_aircon_l_02
@@ -67,9 +72,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1426534598] = { -- prop_aircon_l_03
@@ -77,9 +86,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [-1413477803] = { -- prop_aircon_l_03_dam
@@ -87,9 +100,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1195939145] = { -- prop_aircon_l_04
@@ -97,9 +114,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1369811908] = { -- prop_aircon_m_01
@@ -107,9 +128,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1131941737] = { -- prop_aircon_m_02
@@ -117,9 +142,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1948414141] = { -- prop_aircon_m_03
@@ -127,9 +156,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [1709954128] = { -- prop_aircon_m_04
@@ -137,9 +170,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [-1393761711] = { -- prop_aircon_m_05
@@ -147,9 +184,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
         [-1393761711] = { -- prop_aircon_m_06
@@ -157,9 +198,13 @@ return{
             maxRewards = 3,
             rewards = {
                 { item = 'plastic', min = 1, max = 2 },
+                { item = 'iron', min = 1, max = 2 },
+                { item = 'steel', min = 1, max = 2 },
+                { item = 'glass', min = 1, max = 2 },
+                { item = 'aluminum', min = 1, max = 2 },
                 { item = 'metalscrap', min = 3, max = 6 },
                 { item = 'rubber', min = 1, max = 2 },
-                { item = 'copperwire', min = 3, max = 6 },
+                { item = 'copper', min = 3, max = 6 },
             },
         },
     },

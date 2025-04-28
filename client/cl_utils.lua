@@ -29,7 +29,10 @@ function Utils.Notify(text, type, duration)
     end
 end
 
+local alertTimeOut = false --Not used anywhere else
 function Utils.AlertCops(coords)
+    if alertTimeOut then return end
+    alertTimeOut = true
     --Alert Cops
     local chance = Config.CopsChance
     local randomNumber = math.random()
@@ -41,6 +44,7 @@ function Utils.AlertCops(coords)
             exports["ps-dispatch"]:CustomAlert({
                 message = 'Scrap Material Theft',
                 code = '484',
+                coords = coords,
                 name = tostring('%s - %s'):format(Config.DispatchCaller[math.random(1,#Config.DispatchCaller)], Config.DispatchMsg[math.random(1,#Config.DispatchMsg)]) or 'Thieves stealing',
             })
         elseif Config.Dispatch =='cd_dispatch' then
@@ -64,6 +68,10 @@ function Utils.AlertCops(coords)
                 }
             })
         end
+
+        SetTimeout(Config.AlertCooldown, function()
+            alertTimeOut = false
+        end)
 
     end
 end

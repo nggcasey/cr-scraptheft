@@ -42,7 +42,6 @@ local function ClearExpiredCooldowns(now)
 end
 
 local function RewardPlayer(src, model)
-    print(('Model is %s'):format(model))
     local rewardsConfig = Config.ScrapObjects[model]
     if not rewardsConfig then
         warn(('Player %s tried to receive scrap reward for unknown model %s.'):format(src, tostring(model)))
@@ -135,7 +134,6 @@ lib.callback.register('cr-scraptheft:checkIfScrapped', function(source, data)
 end)
 
 RegisterNetEvent('cr-scraptheft:server:requestreward', function(data)
-    print(json.encode(data))
     local src = source
     local ped = GetPlayerPed(src)
 
