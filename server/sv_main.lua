@@ -153,7 +153,7 @@ RegisterNetEvent('cr-scraptheft:server:requestreward', function(data)
     local playerCoords = GetEntityCoords(ped)
     local distance = #(playerCoords - data.coords)
 
-    if distance > (Config.TargetDistance * 2) then --Allow double radius to avoid slight issues
+    if distance > (Config.TargetDistance * 10) then --Allow 10x radius to avoid slight issues: TODO - Rework logic
         warn(('Possible Exploits: Player ID: %s tried to scrap from too far away (%.2f meters).'):format(src, distance))
         return
     end

@@ -31,12 +31,26 @@ end
 
 local alertTimeOut = false --Not used anywhere else
 function Utils.AlertCops(coords)
-    if alertTimeOut then return end
-    alertTimeOut = true
+    if alertTimeOut then
+        if GetConvar('cr-scraptheft_debugMode', 'false') == 'true' then
+            print("Alerts suppressed due to cooldown")
+        end
+        return
+    end
+
     --Alert Cops
     local chance = Config.CopsChance
     local randomNumber = math.random()
     local pos = GetEntityCoords(PlayerPedId())
+
+    if GetConvar('cr-scraptheft_debugMode', 'false') == 'true' then
+        print(string.format("Settings: Random Number: %s | Config.CopsChance: %s", tostring(randomNumber), tostring(chance)))
+        if randomNumber <= chance then
+            print("Random number less than chance - Police WILL be alerted")
+        else
+            print("Random number greater than chance - Police will NOT be alerted")
+        end
+    end
 
     if randomNumber <= chance then
 
@@ -68,9 +82,16 @@ function Utils.AlertCops(coords)
                 }
             })
         end
+        alertTimeOut = true
+        if GetConvar('cr-scraptheft_debugMode', 'false') == 'true' then
+            print("Start alert timeout for "..Config.AlertCooldown..' milliseconds')
+        end
 
         SetTimeout(Config.AlertCooldown, function()
             alertTimeOut = false
+            if GetConvar('cr-scraptheft_debugMode', 'false') == 'true' then
+                print('Alert timeout finished')
+            end
         end)
 
     end
