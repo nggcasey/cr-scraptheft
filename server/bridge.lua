@@ -50,13 +50,27 @@ function Bridge.pay(src, amount, dirty)
     local account = config.Payout.cleanAccount
     local player = getPlayer(src)
     if (fw == 'qbx' or fw == 'qb') and player then
-        return player.Functions.AddMoney(account, amount, 'scrap-sale')
+        return player.Functions.AddMoney(account, amount, 'thief-sale')
     elseif fw == 'esx' and player then
-        if account == 'cash' or account == 'money' then player.addMoney(amount, 'Scrap sale')
-        else player.addAccountMoney(account, amount, 'Scrap sale') end
+        if account == 'cash' or account == 'money' then player.addMoney(amount, 'Thief sale')
+        else player.addAccountMoney(account, amount, 'Thief sale') end
         return true
     end
     return exports.ox_inventory:AddItem(src, 'money', amount)
+end
+
+function Bridge.removeMoney(src, amount)
+    if amount <= 0 then return true end
+    local account = config.Payout.cleanAccount
+    local player = getPlayer(src)
+    if (fw == 'qbx' or fw == 'qb') and player then
+        return player.Functions.RemoveMoney(account, amount, 'thief-payoff')
+    elseif fw == 'esx' and player then
+        if player.getMoney() < amount then return false end
+        player.removeMoney(amount, 'Payoff')
+        return true
+    end
+    return exports.ox_inventory:RemoveItem(src, 'money', amount)
 end
 
 function Bridge.policeCount()

@@ -1,10 +1,10 @@
 --[[
-    cr-scraptheft :: general settings
+    cr-thief :: general settings
 
     Debug output uses ox_lib's print levels. In the server console / server.cfg:
-        setr ox:printlevel:cr-scraptheft debug
+        setr ox:printlevel:cr-thief debug
 
-    Theft types live in config/profiles.lua, buyers in config/buyers.lua.
+    Jobs live in config/jobs/*.lua, buyers in config/buyers.lua.
 ]]
 
 return {
@@ -15,12 +15,12 @@ return {
     Notify = 'ox',             -- 'ox' | 'okok'
     Progress = 'circle',       -- 'circle' | 'bar'
     Dispatch = 'ps-dispatch',  -- 'ps-dispatch' | 'cd_dispatch' | 'custom' (edit client/modules/dispatch.lua) | false
-    PoliceJobs = { police = true, sheriff = true },
+    PoliceJobs = { police = true, sheriff = true }, -- only used by the qb/esx/standalone police counter (qbx uses job type 'leo')
 
     -- Optional built-in buyers (config/buyers.lua): a scrapyard + a roaming night fence with a live market.
-    -- Leave false if your server sells loot through its own pawn shops / scrap buyers; the resource then
+    -- Leave false if your server sells loot through its own pawn shops / buyers; the resource then
     -- just hands out the items.
-    EnableBuyers = false, -- only used by the qb/esx/standalone police counter (qbx uses job type 'leo')
+    EnableBuyers = false,
 
     -- Any prop model that fails to load falls back to this. Keep it a model you know exists.
     FallbackProp = 'prop_cs_cardbox_01',
@@ -59,6 +59,12 @@ return {
             items = { 'car_jack' },
             wear = 2,
         },
+        crowbar = {
+            label = 'Crowbar',
+            items = { 'crowbar' },
+            wear = 2,
+            prop = { model = 'prop_ing_crowbar', bone = 57005, pos = vec3(0.08, 0.03, -0.03), rot = vec3(-80.0, 0.0, 0.0) },
+        },
     },
 
     ---------------------------------------------------------------------------
@@ -69,105 +75,53 @@ return {
         night = { from = 21, to = 5, multiplier = 0.6 }, -- noise is less likely to be reported at night
         alarmBonus = 0.35,             -- extra report chance per stage while a car alarm is going off
 
-        -- Encounters: sometimes somebody turns up. Not every job, not every NPC in range.
-        -- Each job rolls once (after a short random delay). Who shows up is a weighted pick.
-        --   behaviour 'nag'      - walks up, films you, whinges. Calls if you don't leave. Threaten/shove her and she calls instantly.
-        --   behaviour 'confront' - marches up, warns you, then fights. Interrupts the job. Aim a gun and he may back off.
-        --   behaviour 'caller'   - keeps distance and phones/radios it in. Aim at them and they may run.
-        -- useNearby = try to recruit an ambient ped who can already see you before spawning one.
-        encounters = {
+        -- Who turns up, who calls, and what they say: config/people.lua and config/dispatch.lua
+    },
+
+    ---------------------------------------------------------------------------
+    -- The world: keeps thieves moving instead of farming one spot.
+    --
+    -- Every spot, car and pedestrian is locked for EVERYONE once it's hit (until it respawns).
+    -- On top of that the map is split into cells; each job heats its cell for everyone.
+    -- Hot areas mean jumpier locals (more reports, more encounters). At max heat the area is
+    -- locked down until it cools. Doing the same area over and over also earns you less rep.
+    ---------------------------------------------------------------------------
+    World = {
+        cellSize = 300.0,              -- metres
+        maxHeat = 10,                  -- lockdown at this heat
+        heatMultiplier = 0.12,         -- +12% report / encounter chance per point of area heat
+        decay = { every = 120, amount = 1 }, -- seconds, heat points
+
+        personal = {
+            window = 45,               -- minutes remembered
+            repeats = 3,               -- jobs in the same cell before rep drops off
+            xpMultiplier = 0.35,
+        },
+
+        -- Word on the street: one job type in one district pays bonus rep + extra loot for a while.
+        -- Pulls thieves to the same part of town, so they run into each other.
+        tips = {
             enabled = true,
-            chance = 0.3,               -- per job
-            nightMultiplier = 0.6,      -- fewer people about at night
-            delay = { 3000, 12000 },    -- ms after starting before the roll
-            spawnDistance = { 22.0, 35.0 },
-            copsSeeYou = true,          -- an ambient cop with line of sight reports it instantly
-
-            types = {
-                karen = {
-                    label = 'Nosy neighbour',
-                    weight = 4,
-                    behaviour = 'nag',
-                    useNearby = false,
-                    models = { 'a_f_m_bevhills_01', 'a_f_m_bevhills_02', 'a_f_y_hipster_02', 'a_f_m_tourist_01' },
-                    nagTime = 15000,    -- ms of filming you before she calls
-                    giveUpDistance = 30.0,
-                    lines = {
-                        'Excuse me! EXCUSE ME! I am filming this!',
-                        'That is NOT your air conditioner. I know whose it is.',
-                        'Do you even live here? I know everyone on this street.',
-                        "I'm calling the police. And the HOA.",
-                        "Don't you dare walk away from me while I'm talking to you!",
-                        'This is going straight on the neighbourhood group.',
-                        "I want to speak to whoever's in charge of you.",
-                    },
-                    leaveLine = 'Hmph. And STAY gone.',
-                    callLine = "That's it, I'm calling the police!",
-                },
-                angry = {
-                    label = 'Angry local',
-                    weight = 2,
-                    behaviour = 'confront',
-                    useNearby = false,
-                    models = { 'a_m_m_hillbilly_01', 'a_m_y_musclbeac_01', 'a_m_m_salton_02', 'a_m_m_farmer_01' },
-                    weapons = { 'WEAPON_UNARMED', 'WEAPON_BAT', 'WEAPON_UNARMED' }, -- random pick
-                    warnTime = 4000,
-                    backOffChance = 0.6,  -- chance he backs down when you aim a gun at him
-                    callChance = 0.25,    -- chance he also rings the cops afterwards
-                    lines = {
-                        'Oi! Put that down, mate!',
-                        'You picked the wrong street, sunshine.',
-                        "I'll sort you out myself, no need for the cops.",
-                        "Right. That's it. Come here.",
-                    },
-                    backOffLine = 'Woah, woah! Alright, alright...',
-                },
-                dogooder = {
-                    label = 'Timid passer-by',
-                    weight = 4,
-                    behaviour = 'caller',
-                    useNearby = true,
-                    approach = false,
-                    models = { 'a_m_y_hipster_01', 'a_f_y_tourist_01', 'a_m_y_business_01', 'a_f_y_business_01' },
-                    callTime = 8000,
-                    scareChance = 0.9,
-                    scenario = 'WORLD_HUMAN_STAND_MOBILE',
-                    lines = { "H-hello, police? I think someone's stealing...", "I-I'm not looking! I'm not looking!" },
-                },
-                security = {
-                    label = 'Security guard',
-                    weight = 1,
-                    behaviour = 'caller',
-                    useNearby = false,
-                    approach = true,
-                    keepDistance = 8.0,
-                    models = { 's_m_m_security_01' },
-                    weapon = 'WEAPON_FLASHLIGHT',
-                    callTime = 5000,
-                    scareChance = 0.35,
-                    anim = { dict = 'random@arrests', clip = 'generic_radio_chatter', flag = 49 },
-                    lines = { 'Hey! You! Stay right there!', "Control, I've got someone tampering on site." },
-                },
+            every = 30,                -- minutes
+            repMultiplier = 2.0,
+            lootMultiplier = 1.5,
+            announceMinRep = 2,        -- rep level that hears about new tips automatically (others use /thief)
+            districts = {
+                { label = 'Mirror Park',     coords = vec3(1100.0, -550.0, 57.0),   radius = 400.0 },
+                { label = 'Vespucci',        coords = vec3(-1200.0, -1100.0, 4.0),  radius = 450.0 },
+                { label = 'Strawberry',      coords = vec3(200.0, -1500.0, 29.0),   radius = 400.0 },
+                { label = 'Little Seoul',    coords = vec3(-650.0, -950.0, 22.0),   radius = 400.0 },
+                { label = 'Rockford Hills',  coords = vec3(-800.0, -200.0, 37.0),   radius = 450.0 },
+                { label = 'Del Perro',       coords = vec3(-1500.0, -500.0, 35.0),  radius = 400.0 },
+                { label = 'Downtown',        coords = vec3(200.0, -800.0, 31.0),    radius = 450.0 },
+                { label = 'Davis',           coords = vec3(100.0, -1700.0, 29.0),   radius = 400.0 },
+                { label = 'Vinewood',        coords = vec3(300.0, 200.0, 104.0),    radius = 450.0 },
+                { label = 'El Burro Heights', coords = vec3(1350.0, -1700.0, 55.0), radius = 400.0 },
+                { label = 'Elysian Island',  coords = vec3(500.0, -3000.0, 6.0),    radius = 600.0 },
+                { label = 'Sandy Shores',    coords = vec3(1850.0, 3700.0, 33.0),   radius = 600.0 },
+                { label = 'Grapeseed',       coords = vec3(1700.0, 4800.0, 42.0),   radius = 500.0 },
+                { label = 'Paleto Bay',      coords = vec3(-200.0, 6300.0, 31.0),   radius = 600.0 },
             },
-        },
-
-        callers = {
-            'John', 'James', 'Betty', 'Karen', 'Mr Singh', 'Dennis', 'Frank', 'Peggy',
-            'Mildred', 'Ethel', 'Gladys', 'Kevin', 'Mohammed', 'Yusuf', 'Ming', 'Mrs Wong',
-        },
-        messages = {
-            'Help, these bastards are stealing again',
-            'Filthy thieves stealing all the metal, tell em to get a bloody job!',
-            'Grubby mongrels pinching copper, DO SOMETHING!',
-            'These idiots are thieving from my building again!',
-            'Someone is cutting something with a grinder, sparks everywhere',
-            'I am on the neighbourhood watch and saw a person stealing scrap materials',
-            'Theres a dodgy looking person cutting bits off the building, maybe for scrap metal?',
-            'I think I saw someone doing something they shouldnt be',
-            'Theres a thief going around the neighbourhood stealing shit',
-            'Im the security guard for the area and someones stealing parts from my building',
-            'Someone is lying under a car that isnt theirs, I can hear a saw',
-            'Someone across the road is stealing, I tried to stop them but they told me to piss off',
         },
     },
 
@@ -186,16 +140,18 @@ return {
     },
 
     ---------------------------------------------------------------------------
-    -- Reputation. Each completed job gives the profile's `rep` value as XP.
+    -- Thief reputation. Each completed job gives the job's `rep` value as XP (reduced if you keep
+    -- hitting the same neighbourhood, boosted by the current tip).
     -- speed = work duration multiplier, price = sale price multiplier.
     ---------------------------------------------------------------------------
     Rep = {
         levels = {
-            { xp = 0,   label = 'Opportunist', speed = 1.00, price = 1.00 },
-            { xp = 40,  label = 'Scrapper',    speed = 0.95, price = 1.03 },
-            { xp = 120, label = 'Parts Hound', speed = 0.90, price = 1.06 },
-            { xp = 300, label = 'Chop Artist', speed = 0.85, price = 1.10 },
-            { xp = 650, label = 'Copper King', speed = 0.80, price = 1.15 },
+            { xp = 0,    label = 'Nobody',             speed = 1.00, price = 1.00 },
+            { xp = 40,   label = 'Petty Thief',        speed = 0.96, price = 1.03 },
+            { xp = 140,  label = 'Prowler',            speed = 0.92, price = 1.06 },
+            { xp = 350,  label = 'Professional',       speed = 0.88, price = 1.10 },
+            { xp = 750,  label = "Fixer's Favourite", speed = 0.84, price = 1.13 },
+            { xp = 1500, label = 'Ghost',              speed = 0.80, price = 1.16 },
         },
     },
 

@@ -18,7 +18,7 @@ function Loot.spawn(entry, coords, opts)
         U.delete(obj)
         return
     end
-    if not lib.callback.await('cr-scraptheft:registerLoot', false, entry.id, netId) then
+    if not lib.callback.await('cr-thief:registerLoot', false, entry.id, netId) then
         U.delete(obj)
         return
     end
@@ -57,17 +57,17 @@ end
 
 local function lootState(entity)
     if not NetworkGetEntityIsNetworked(entity) then return end
-    return Entity(entity).state['scrap:loot']
+    return Entity(entity).state['thief:loot']
 end
 
 exports.ox_target:addModel(lootModels(), {
     {
-        name = 'cr-scraptheft:pickup',
+        name = 'cr-thief:pickup',
         icon = 'fas fa-hand',
         label = locale('target_pickup'),
         distance = 2.0,
         canInteract = function(entity)
-            return lootState(entity) ~= nil and not LocalPlayer.state['scrap:carry']
+            return lootState(entity) ~= nil and not LocalPlayer.state['thief:carry']
         end,
         onSelect = function(data)
             local entity = data.entity
@@ -79,7 +79,7 @@ exports.ox_target:addModel(lootModels(), {
             Wait(600)
             U.anim.once(ped, 'random@domestic', 'pickup_low', 1100)
 
-            local ok, reason = lib.callback.await('cr-scraptheft:pickup', false, NetworkGetNetworkIdFromEntity(entity))
+            local ok, reason = lib.callback.await('cr-thief:pickup', false, NetworkGetNetworkIdFromEntity(entity))
             if not ok then return U.fail(reason) end
             if reason ~= 'carry' then U.notify(locale('picked_up', state.label), 'success') end
         end,

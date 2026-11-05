@@ -44,7 +44,7 @@ local function sell(buyer, ped, entry)
     end
 
     handOver(ped)
-    local ok, payout = lib.callback.await('cr-scraptheft:sell', false, buyer.id, entry.item, amount)
+    local ok, payout = lib.callback.await('cr-thief:sell', false, buyer.id, entry.item, amount)
     if buyer.scenario then TaskStartScenarioInPlace(ped, buyer.scenario, 0, true) end
 
     if not ok then return U.fail(payout) end
@@ -53,7 +53,7 @@ local function sell(buyer, ped, entry)
 end
 
 function Buyers.open(buyer, ped)
-    local data = lib.callback.await('cr-scraptheft:market', false, buyer.id)
+    local data = lib.callback.await('cr-thief:market', false, buyer.id)
     if not data then return end
 
     if data.refused then
@@ -97,12 +97,12 @@ function Buyers.open(buyer, ped)
         end
     end
 
-    lib.registerContext({ id = 'cr-scraptheft:buyer', title = buyer.label, options = options })
-    lib.showContext('cr-scraptheft:buyer')
+    lib.registerContext({ id = 'cr-thief:buyer', title = buyer.label, options = options })
+    lib.showContext('cr-thief:buyer')
 end
 
 local function tipOff(buyer)
-    local info = lib.callback.await('cr-scraptheft:tipOff', false, buyer.id)
+    local info = lib.callback.await('cr-thief:tipOff', false, buyer.id)
     if info == false then return U.notify(locale('tip_refuse'), 'error') end
     if not info then return end
     SetNewWaypoint(info.coords.x, info.coords.y)
@@ -129,7 +129,7 @@ local function spawnPed(buyer, loc)
 
     local options = {
         {
-            name = 'cr-scraptheft:sell',
+            name = 'cr-thief:sell',
             icon = 'fas fa-scale-balanced',
             label = locale('target_sell', buyer.label),
             distance = 2.5,
@@ -138,7 +138,7 @@ local function spawnPed(buyer, loc)
     }
     if buyer.tipsOff then
         options[#options + 1] = {
-            name = 'cr-scraptheft:tip',
+            name = 'cr-thief:tip',
             icon = 'fas fa-comment-dots',
             label = locale('target_tip'),
             distance = 2.5,
@@ -190,8 +190,8 @@ local function setup(buyer)
         })
     end
 
-    place(GlobalState[('scrap:buyer:%s'):format(buyer.id)] or 1)
-    AddStateBagChangeHandler(('scrap:buyer:%s'):format(buyer.id), 'global', function(_, _, value)
+    place(GlobalState[('thief:buyer:%s'):format(buyer.id)] or 1)
+    AddStateBagChangeHandler(('thief:buyer:%s'):format(buyer.id), 'global', function(_, _, value)
         place(value or 1)
     end)
 

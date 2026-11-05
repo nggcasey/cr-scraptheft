@@ -1,5 +1,5 @@
 --[[
-    Carrying heavy loot. The server owns the state (player statebag 'scrap:carry');
+    Carrying heavy loot. The server owns the state (player statebag 'thief:carry');
     this module just makes it look and feel heavy:
       - box-carry animation, no sprinting, jumping, weapons, cover or entering vehicles
       - slower walk
@@ -35,7 +35,7 @@ function Carry.drop()
     local alive = not IsEntityDead(ped) and not IsPedRagdoll(ped)
     if alive then U.anim.once(ped, 'random@domestic', 'pickup_low', 900) end
 
-    local entry = lib.callback.await('cr-scraptheft:drop', false)
+    local entry = lib.callback.await('cr-thief:drop', false)
     if entry then
         stop()
         local pos = GetOffsetFromEntityInWorldCoords(ped, 0.0, 0.6, alive and -0.4 or 0.2)
@@ -80,7 +80,7 @@ end
 function Carry.isCarrying() return active ~= nil end
 
 keybind = lib.addKeybind({
-    name = 'cr_scraptheft_drop',
+    name = 'cr_thief_drop',
     description = locale('keybind_drop'),
     defaultKey = cfg.dropKey,
     onPressed = function()
@@ -88,12 +88,12 @@ keybind = lib.addKeybind({
     end,
 })
 
-AddStateBagChangeHandler('scrap:carry', ('player:%s'):format(cache.serverId), function(_, _, value)
+AddStateBagChangeHandler('thief:carry', ('player:%s'):format(cache.serverId), function(_, _, value)
     if value then start(value) else stop() end
 end)
 
 CreateThread(function()
-    local current = LocalPlayer.state['scrap:carry']
+    local current = LocalPlayer.state['thief:carry']
     if current then start(current) end
 end)
 
@@ -102,7 +102,7 @@ end)
 ---------------------------------------------------------------------------
 exports.ox_target:addGlobalVehicle({
     {
-        name = 'cr-scraptheft:stow',
+        name = 'cr-thief:stow',
         icon = 'fas fa-box-open',
         label = locale('target_stow'),
         distance = 3.0,
@@ -117,7 +117,7 @@ exports.ox_target:addGlobalVehicle({
             Wait(600)
             U.anim.once(ped, 'anim@heists@narcotics@trash', 'throw_b', 1200, 48)
 
-            local ok, reason = lib.callback.await('cr-scraptheft:stow', false, NetworkGetNetworkIdFromEntity(veh))
+            local ok, reason = lib.callback.await('cr-thief:stow', false, NetworkGetNetworkIdFromEntity(veh))
             if hasControl then SetTimeout(800, function() SetVehicleDoorShut(veh, 5, false) end) end
             dropping = false
             if not ok then return U.fail(reason) end

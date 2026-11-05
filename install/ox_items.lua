@@ -1,4 +1,7 @@
 --[[
+    cr-thief items.
+    'money' (cash) is ox_inventory's default cash item and is used as loot by several street jobs.
+
     Paste into ox_inventory/data/items.lua (skip any you already have, e.g. metalscrap, copper).
     Item images: copy images/*.png into ox_inventory/web/images (missing images show a placeholder).
 
@@ -46,6 +49,13 @@
     stack = false,
     close = true,
 },
+['crowbar'] = {
+    label = 'Crowbar',
+    weight = 1800,
+    stack = false,
+    close = true,
+    description = 'The universal key.',
+},
 ['insulated_gloves'] = {
     label = 'Insulated Gloves',
     weight = 300,
@@ -83,6 +93,31 @@
     weight = 11000,
     stack = false,
 },
+
+['car_battery'] = {
+    label = 'Car Battery',
+    weight = 15000,
+    stack = true,
+},
+['pipe_bundle'] = {
+    label = 'Bundle of Pipe',
+    weight = 20000,
+    stack = true,
+},
+['power_drill'] = { label = 'Power Drill', weight = 1800, stack = true, description = 'Still has the site\'s name written on it.' },
+['nail_gun']    = { label = 'Nail Gun',    weight = 2500, stack = true },
+
+-- Street / shop loot -----------------------------------------------------------
+['stolen_phone']    = { label = 'Stolen Phone',    weight = 200,  stack = true, description = 'Locked. Still worth something.' },
+['stolen_gps']      = { label = 'Stolen GPS',      weight = 400,  stack = true },
+['stolen_laptop']   = { label = 'Stolen Laptop',   weight = 2000, stack = true },
+['stolen_watch']    = { label = 'Stolen Watch',    weight = 100,  stack = true },
+['sunglasses']      = { label = 'Sunglasses',      weight = 100,  stack = true },
+['stolen_giftcard'] = { label = 'Gift Card',       weight = 10,   stack = false, description = 'Balance unknown. Allegedly.' },
+['stolen_mail']     = { label = 'Stolen Mail',     weight = 50,   stack = true },
+['stolen_goods']    = { label = 'Shoplifted Goods', weight = 300, stack = true },
+['stolen_liquor']   = { label = 'Bottle of Liquor', weight = 800, stack = true },
+['stolen_cigs']     = { label = 'Carton of Cigarettes', weight = 300, stack = true },
 
 -- Common materials (most servers already have these) ------------------------
 ['metalscrap'] = { label = 'Metal Scrap', weight = 100, stack = true },

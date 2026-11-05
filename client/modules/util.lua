@@ -16,6 +16,16 @@ function U.notify(text, kind, duration)
     end
 end
 
+---A line of dialogue or an ambient event (titled, with an icon).
+function U.speech(title, text, icon, kind)
+    if not text or text == '' then return end
+    if config.Notify == 'okok' then
+        exports.okokNotify:Alert(title or '', text, 4500, kind == 'inform' and 'info' or (kind or 'info'), false)
+    else
+        lib.notify({ title = title, description = text, icon = icon, type = kind or 'inform', duration = 4500 })
+    end
+end
+
 ---Turn a server failure reason into a message.
 function U.fail(reason, extra)
     local key = 'err_' .. tostring(reason or 'generic')

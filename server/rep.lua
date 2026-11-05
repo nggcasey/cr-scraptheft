@@ -36,7 +36,7 @@ function Rep.level(src)
     return idx, level, nextLevel, xp
 end
 
-lib.callback.register('cr-scraptheft:getRep', function(source)
+lib.callback.register('cr-thief:getRep', function(source)
     local idx, level, nextLevel, xp = Rep.level(source)
     return { xp = xp, index = idx, label = level.label, speed = level.speed, next = nextLevel and nextLevel.xp }
 end)

@@ -3,9 +3,9 @@ game 'gta5'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
-name 'cr-scraptheft'
+name 'cr-thief'
 author 'Casey Reed'
-description 'Immersive scrap & parts theft: strip A/C units, rip copper, cut catalytic converters, jack wheels and fence the goods.'
+description 'Be a thief: copper, cats, wheels, car break-ins, pickpocketing, shoplifting, construction sites and petty street crime, with a living neighbourhood that notices.'
 version '3.0.0'
 repository 'https://github.com/nggcasey/cr-scraptheft'
 
@@ -18,6 +18,7 @@ server_script 'server/main.lua'
 
 files {
     'config/*.lua',
+    'config/jobs/*.lua',
     'shared/*.lua',
     'client/modules/*.lua',
     'locales/*.json',

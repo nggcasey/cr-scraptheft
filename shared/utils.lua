@@ -1,6 +1,14 @@
 local config = require 'config.shared'
-local profiles = require 'config.profiles'
+local profiles = {}
+for _, file in ipairs(require 'config.jobs') do
+    for id, job in pairs(require('config.jobs.' .. file)) do
+        if profiles[id] then error(('cr-thief: duplicate job id "%s" in config/jobs/%s.lua'):format(id, file)) end
+        profiles[id] = job
+    end
+end
 local buyers = require 'config.buyers'
+local people = require 'config.people'
+local dispatch = require 'config.dispatch'
 
 local Shared = {}
 
@@ -8,6 +16,8 @@ Shared.resource = GetCurrentResourceName()
 Shared.config = config
 Shared.profiles = profiles
 Shared.buyers = buyers
+Shared.people = people
+Shared.dispatch = dispatch
 
 function Shared.hash(model)
     return type(model) == 'number' and model or joaat(model)
@@ -39,6 +49,41 @@ for _, tier in ipairs(config.Vehicles.tiers or {}) do
     for _, model in ipairs(tier.models) do
         config.Vehicles.tierByHash[joaat(model)] = tier.multiplier
     end
+end
+
+function Shared.pick(list)
+    if not list or #list == 0 then return nil end
+    return list[math.random(#list)]
+end
+
+---Pick a key from { key = weight } or an entry from a list of { weight = n }.
+function Shared.weighted(tbl)
+    local total = 0
+    for _, v in pairs(tbl) do total += type(v) == 'table' and (v.weight or 1) or v end
+    local roll = math.random() * total
+    for k, v in pairs(tbl) do
+        roll -= type(v) == 'table' and (v.weight or 1) or v
+        if roll <= 0 then return k, v end
+    end
+end
+
+---Roll a { min, max } range (integers stay integers); anything else is returned as-is.
+function Shared.roll(v)
+    if type(v) == 'table' and #v == 2 and type(v[1]) == 'number' and type(v[2]) == 'number' then
+        if math.type(v[1]) == 'integer' and math.type(v[2]) == 'integer' then return math.random(v[1], v[2]) end
+        return v[1] + math.random() * (v[2] - v[1])
+    end
+    return v
+end
+
+---Fill {placeholders}. Unknown ones are left as-is.
+function Shared.fill(str, vars)
+    if not str then return '' end
+    return (str:gsub('{(%w+)}', function(k)
+        local v = vars[k]
+        if v == nil then return '{' .. k .. '}' end
+        return tostring(v)
+    end))
 end
 
 ---Stable id for a static world object (identical on every client and the server).

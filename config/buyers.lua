@@ -1,5 +1,5 @@
 --[[
-    cr-scraptheft :: buyers
+    cr-thief :: buyers
 
     items: [item] = base price per unit, or 'value' to pay the item's metadata.value (catalytic converters, wheels).
     Prices are then scaled by the live market and the seller's rep.

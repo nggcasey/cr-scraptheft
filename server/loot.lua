@@ -47,7 +47,7 @@ end
 
 local function setCarry(src, entry)
     carrying[src] = entry
-    Player(src).state:set('scrap:carry', entry and {
+    Player(src).state:set('thief:carry', entry and {
         label = entry.label,
         model = entry.modelHash,
         attach = entry.attach,
@@ -60,7 +60,7 @@ local function track(obj, entry)
     entry.entity = obj
     entry.expires = os.time() + config.Loot.lifetime * 60
     entities[netId] = entry
-    Entity(obj).state:set('scrap:loot', { label = entry.label, carry = entry.carry or false }, true)
+    Entity(obj).state:set('thief:loot', { label = entry.label, carry = entry.carry or false }, true)
     return netId
 end
 
@@ -95,7 +95,7 @@ end
 
 function Loot.isCarrying(src) return carrying[src] ~= nil end
 
-lib.callback.register('cr-scraptheft:registerLoot', function(source, id, netId)
+lib.callback.register('cr-thief:registerLoot', function(source, id, netId)
     local list = pending[source]
     local entry = list and list[id]
     if not entry or type(netId) ~= 'number' then return false end
@@ -115,7 +115,7 @@ lib.callback.register('cr-scraptheft:registerLoot', function(source, id, netId)
     return true
 end)
 
-lib.callback.register('cr-scraptheft:pickup', function(source, netId)
+lib.callback.register('cr-thief:pickup', function(source, netId)
     local entry = entities[netId]
     if not entry or not DoesEntityExist(entry.entity) then return false end
     if carrying[source] then return false, 'already_carrying' end
@@ -135,14 +135,14 @@ lib.callback.register('cr-scraptheft:pickup', function(source, netId)
     return true
 end)
 
-lib.callback.register('cr-scraptheft:drop', function(source)
+lib.callback.register('cr-thief:drop', function(source)
     local entry = carrying[source]
     if not entry then return end
     setCarry(source, nil)
     return { id = Loot.queue(source, entry), model = entry.modelHash }
 end)
 
-lib.callback.register('cr-scraptheft:stow', function(source, vehNet)
+lib.callback.register('cr-thief:stow', function(source, vehNet)
     local entry = carrying[source]
     if not entry then return false end
 
@@ -208,10 +208,11 @@ AddEventHandler('onResourceStop', function(name)
     end
     for src, entry in pairs(carrying) do
         giveAll(src, entry.items)
-        Player(src).state:set('scrap:carry', nil, true)
+        Player(src).state:set('thief:carry', nil, true)
     end
 end)
 
 Loot.giveAll = giveAll
+Loot.canCarryAll = canCarryAll
 Loot.waitForEntity = waitForEntity
 return Loot

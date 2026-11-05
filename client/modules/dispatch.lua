@@ -3,19 +3,16 @@ local config = Shared.config
 
 local Dispatch = {}
 
-local function pick(list) return list[math.random(#list)] end
-
 ---@param profile table
 ---@param coords vector3
----@param witnessed boolean true when a witness phoned it in (vs. a noise report)
-function Dispatch.send(profile, coords, witnessed)
-    local heat = config.Heat
+---@param report { caller: string, message: string, gender: string, street: string, getaway?: table }
+function Dispatch.send(profile, coords, report)
     local alert = profile.alert or {}
     local title = alert.title or 'Theft in progress'
-    local caller = ('%s - %s'):format(pick(heat.callers), pick(heat.messages))
-    if not witnessed then caller = ('%s (%s)'):format(caller, locale('dispatch_noise')) end
+    local line = ('%s - %s'):format(report.caller, report.message)
+    local car = report.getaway
 
-    lib.print.debug(('dispatch: %s @ %s'):format(title, coords))
+    lib.print.debug(('dispatch [%s] %s'):format(title, line))
 
     if config.Dispatch == 'ps-dispatch' then
         exports['ps-dispatch']:CustomAlert({
@@ -24,7 +21,12 @@ function Dispatch.send(profile, coords, witnessed)
             icon = 'fas fa-screwdriver-wrench',
             priority = 2,
             coords = coords,
-            name = caller,
+            name = line,
+            gender = report.gender,
+            street = report.street,
+            vehicle = car and car.label or nil,
+            color = car and car.colour or nil,
+            plate = car and car.plate or nil,
             jobs = { 'leo' },
             alert = { radius = 0, sprite = 431, color = 1, scale = 1.0, length = 3, flash = false },
         })
@@ -34,7 +36,7 @@ function Dispatch.send(profile, coords, witnessed)
             job_table = { 'police' },
             coords = coords,
             title = title,
-            message = caller,
+            message = line,
             flash = 0,
             unique_id = data.unique_id,
             sound = 1,
@@ -44,8 +46,8 @@ function Dispatch.send(profile, coords, witnessed)
             },
         })
     elseif config.Dispatch == 'custom' then
-        -- Hook your own dispatch here.
-        -- TriggerServerEvent('my-dispatch:alert', { title = title, message = caller, coords = coords })
+        -- Hook your own dispatch here. `report` has caller, message, gender, street, getaway.
+        -- TriggerServerEvent('my-dispatch:alert', { title = title, message = line, coords = coords })
     end
 end
 

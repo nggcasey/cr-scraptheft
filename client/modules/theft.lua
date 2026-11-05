@@ -8,6 +8,7 @@ local U = require 'client.modules.util'
 local Heat = require 'client.modules.heat'
 local Loot = require 'client.modules.loot'
 local Carry = require 'client.modules.carry'
+local Encounters = require 'client.modules.encounters'
 
 local config = Shared.config
 local Theft = { busy = false }
@@ -41,13 +42,30 @@ function Theft.vehicleContext(profile, veh, wheel)
     local label = GetLabelText(name)
     if label == 'NULL' then label = name end
 
+    local window
+    if profile.part == 'glovebox' then
+        local p = GetEntityCoords(cache.ped)
+        window = GetOffsetFromEntityGivenWorldCoords(veh, p.x, p.y, p.z).x >= 0 and 1 or 0
+    end
+
     return {
         profile = profile,
         entity = veh,
         vehicle = veh,
         wheel = wheel,
+        window = window,
         focus = wheel and Theft.wheelPosition(veh, wheel) or GetEntityCoords(veh),
-        request = { netId = VehToNet(veh), wheel = wheel, label = label },
+        request = { netId = VehToNet(veh), wheel = wheel, window = window, label = label },
+    }
+end
+
+function Theft.pedContext(profile, ped)
+    return {
+        profile = profile,
+        entity = ped,
+        victim = ped,
+        focus = GetEntityCoords(ped),
+        request = { netId = PedToNet(ped) },
     }
 end
 
@@ -74,11 +92,29 @@ local function position(ctx)
         return
     end
 
+    if profile.kind == 'ped' then
+        local victim = ctx.victim
+        if U.requestControl(victim, 500) then TaskStandStill(victim, 8000) end
+        local stand = GetOffsetFromEntityInWorldCoords(victim, 0.0, -0.55, 0.0)
+        U.walkTo(stand, GetEntityHeading(victim), 1500)
+        ctx.dropAt = GetEntityCoords(victim)
+        return
+    end
+
     local veh = ctx.vehicle
     local h = GetEntityHeading(veh)
     local min, max = GetModelDimensions(GetEntityModel(veh))
 
-    if profile.part == 'cat' then
+    if profile.part == 'glovebox' then
+        local side = ctx.window == 1 and 1 or -1
+        local stand = GetOffsetFromEntityInWorldCoords(veh, side * (max.x + 0.35), 0.35, 0.0)
+        U.walkTo(stand, side == 1 and h + 90.0 or h - 90.0)
+        ctx.dropAt = GetOffsetFromEntityInWorldCoords(veh, side * (max.x + 0.8), 0.35, 0.3)
+    elseif profile.part == 'battery' then
+        local stand = GetOffsetFromEntityInWorldCoords(veh, 0.0, max.y + 0.45, 0.0)
+        U.walkTo(stand, h + 180.0)
+        ctx.dropAt = GetOffsetFromEntityInWorldCoords(veh, 1.0, max.y + 0.9, 0.3)
+    elseif profile.part == 'cat' then
         local side = GetOffsetFromEntityGivenWorldCoords(veh, pcoords.x, pcoords.y, pcoords.z).x >= 0 and 1 or -1
         local stand = GetOffsetFromEntityInWorldCoords(veh, side * (max.x + 0.15), 0.0, 0.0)
         -- Face away from the car: the mechanic clip lies back, sliding the upper body underneath.
@@ -104,7 +140,7 @@ end
 
 local function registerDebris(ctx, obj, netId, temporary)
     if not netId then return end
-    if lib.callback.await('cr-scraptheft:registerDebris', false, ctx.token, netId, temporary) then
+    if lib.callback.await('cr-thief:registerDebris', false, ctx.token, netId, temporary) then
         if not temporary then U.release(obj) end
     end
 end
@@ -137,6 +173,14 @@ local function spawnDebris(ctx, def)
         impulse = vec3(math.random(-10, 10) / 10, math.random(-10, 10) / 10, 1.0),
     })
     registerDebris(ctx, obj, netId, false)
+end
+
+local function smashWindow(ctx)
+    if U.requestControl(ctx.vehicle, 1000) then SmashVehicleWindow(ctx.vehicle, ctx.window or 0) end
+end
+
+local function openHood(ctx)
+    if U.requestControl(ctx.vehicle, 1000) then SetVehicleDoorOpen(ctx.vehicle, 4, false, false) end
 end
 
 local function removeWheel(ctx)
@@ -175,6 +219,31 @@ local function rollHazard(ctx, stage, steps)
 
     if hazard.type == 'shock' then shock(ctx, hazard) end
     return true
+end
+
+---------------------------------------------------------------------------
+-- Guards (shop clerks): can they see you, and do they notice?
+---------------------------------------------------------------------------
+local function guardCaught(ctx)
+    local guard = ctx.profile.guard
+    if not guard then return false end
+    if not guard.hashes then
+        guard.hashes = {}
+        for _, m in ipairs(guard.models) do guard.hashes[joaat(m)] = true end
+    end
+
+    local me = cache.ped
+    for _, ped in ipairs(GetGamePool('CPed')) do
+        if guard.hashes[GetEntityModel(ped)] and not IsPedAPlayer(ped) and not IsEntityDead(ped)
+            and #(GetEntityCoords(ped) - GetEntityCoords(me)) < guard.radius
+            and HasEntityClearLosToEntityInFront(ped, me) then
+            if math.random() < guard.chance then
+                ctx.caughtBy = ped
+                return true
+            end
+        end
+    end
+    return false
 end
 
 ---------------------------------------------------------------------------
@@ -225,6 +294,11 @@ local function runStage(ctx, stage)
             break
         end
 
+        if guardCaught(ctx) then
+            ok, reason = false, 'caught'
+            break
+        end
+
         if stage.skill then
             setAnim(ctx, stage.anim)
             if lib.skillCheck(stage.skill.difficulty, stage.skill.inputs) then
@@ -264,7 +338,7 @@ end
 function Theft.abort(ctx, serverEnded)
     cleanup(ctx)
     if not serverEnded and ctx.token then
-        lib.callback.await('cr-scraptheft:cancel', false, ctx.token)
+        lib.callback.await('cr-thief:cancel', false, ctx.token)
     end
 end
 
@@ -273,13 +347,15 @@ function Theft.run(ctx)
     Theft.busy = true
 
     local profile = ctx.profile
-    local ok, token, speed = lib.callback.await('cr-scraptheft:begin', false, profile.id, ctx.request)
+    local ok, token, speed = lib.callback.await('cr-thief:begin', false, profile.id, ctx.request)
     if not ok then
         Theft.busy = false
         return U.fail(token, speed)
     end
 
-    ctx.token, ctx.speed, ctx.active, ctx.temp = token, speed or 1.0, true, {}
+    local info = type(speed) == 'table' and speed or {}
+    ctx.token, ctx.active, ctx.temp = token, true, {}
+    ctx.speed, ctx.heatMult, ctx.tipped = info.speed or 1.0, info.heatMult or 1.0, info.tipped
     SetCurrentPedWeapon(cache.ped, `WEAPON_UNARMED`, true)
     position(ctx)
 
@@ -290,6 +366,7 @@ function Theft.run(ctx)
         end
         ctx.alarm = true
         U.notify(locale('alarm'), 'warning')
+        Heat.alarm(ctx)
     end
 
     Heat.watch(ctx)
@@ -309,18 +386,34 @@ function Theft.run(ctx)
 
         if not done then
             Theft.abort(ctx)
+            if reason == 'caught' and ctx.caughtBy then
+                U.notify(locale('caught'), 'error')
+                Encounters.react(ctx.caughtBy, ctx, Heat.hooks(ctx), profile.guard.reactions)
+                return
+            end
+            if ctx.victim then
+                if reason == 'skill' and profile.notice then
+                    U.notify(locale('noticed'), 'error')
+                    return Encounters.react(ctx.victim, ctx, Heat.hooks(ctx), profile.notice.reactions)
+                end
+                if DoesEntityExist(ctx.victim) then ClearPedTasks(ctx.victim) end
+            end
             if reason == 'cancel' then return U.notify(locale('cancelled')) end
             return U.fail(reason, extra)
         end
 
-        local accepted, res, extra2 = lib.callback.await('cr-scraptheft:stage', false, ctx.token, index)
+        local accepted, res, extra2 = lib.callback.await('cr-thief:stage', false, ctx.token, index)
         if not accepted then
             Theft.abort(ctx, true)
             return U.fail(res, extra2)
         end
 
         if stage.debris then spawnDebris(ctx, stage.debris) end
-        if stage.effect == 'removeWheel' and ctx.vehicle then removeWheel(ctx) end
+        if ctx.vehicle then
+            if stage.effect == 'removeWheel' then removeWheel(ctx)
+            elseif stage.effect == 'smashWindow' then smashWindow(ctx)
+            elseif stage.effect == 'openHood' then openHood(ctx) end
+        end
         if type(res) == 'table' then result = res end
     end
 
@@ -328,9 +421,37 @@ function Theft.run(ctx)
     ShakeGameplayCam('HAND_SHAKE', 0.15)
     SetTimeout(600, function() StopGameplayCamShaking(false) end)
 
-    if result and result.loot then
+    if not result then return end
+
+    if #result.pocketed > 0 then
+        U.notify(locale('pocketed', table.concat(result.pocketed, ', ')), 'success', 6000)
+    elseif #result.loot == 0 then
+        U.notify(locale('nothing_worth_taking'), 'inform')
+    end
+
+    if #result.loot > 0 then
         Loot.scatter(result.loot, ctx.dropAt)
         U.notify(locale('job_done', profile.label), 'success')
+    end
+
+    if result.tipped then U.notify(locale('tip_bonus'), 'success') end
+    if result.repeated then U.notify(locale('repeating'), 'warning') end
+    if result.areaHeat >= result.maxHeat then
+        U.notify(locale('area_locked_now'), 'error', 7000)
+    elseif result.areaHeat >= result.maxHeat - 3 then
+        U.notify(locale('area_hot'), 'warning', 6000)
+    end
+
+    -- Pickpocket victims sometimes realise a moment later.
+    if ctx.victim and DoesEntityExist(ctx.victim) then
+        if profile.notice and math.random() < profile.notice.chance then
+            Wait(math.random(1500, 4000))
+            U.notify(locale('noticed'), 'error')
+            Encounters.react(ctx.victim, ctx, Heat.hooks(ctx), profile.notice.reactions)
+        else
+            ClearPedTasks(ctx.victim)
+            TaskWanderStandard(ctx.victim, 10.0, 10)
+        end
     end
 end
 

@@ -53,12 +53,12 @@ function Spots.isStripped(entity)
     return applied[Shared.spotId(GetEntityModel(entity), GetEntityCoords(entity))] ~= nil
 end
 
-AddStateBagChangeHandler('scrap:spots', 'global', function(_, _, value)
+AddStateBagChangeHandler('thief:spots', 'global', function(_, _, value)
     sync(value)
 end)
 
 CreateThread(function()
-    sync(GlobalState['scrap:spots'])
+    sync(GlobalState['thief:spots'])
 end)
 
 AddEventHandler('onResourceStop', function(name)

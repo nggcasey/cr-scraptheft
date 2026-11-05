@@ -6,6 +6,7 @@ local Shared = require 'shared.utils'
 local Bridge = require 'server.bridge'
 local Rep = require 'server.rep'
 local Loot = require 'server.loot'
+local World = require 'server.world'
 
 local config = Shared.config
 local profiles = Shared.profiles
@@ -29,7 +30,7 @@ local function publishSpots()
     for id, s in pairs(stripped) do
         out[id] = { model = s.model, coords = s.coords, heading = s.heading, swap = s.swap, hide = s.hide }
     end
-    GlobalState['scrap:spots'] = out
+    GlobalState['thief:spots'] = out
 end
 publishSpots()
 
@@ -113,7 +114,7 @@ local function rollLoot(profile, ctx)
 
     for _, l in ipairs(profile.loot) do
         if math.random() <= (l.chance or 1.0) then
-            local count = math.random(l.count[1], l.count[2])
+            local count = math.max(1, math.floor(math.random(l.count[1], l.count[2]) * (ctx.lootMult or 1.0) + 0.5))
             if l.value then
                 -- Valued parts are unique pieces: one prop / one inventory item each.
                 for _ = 1, count do
@@ -153,9 +154,17 @@ local function endSession(src)
     sessions[src] = nil
 end
 
+local function targetCoords(s)
+    if s.coords then return s.coords end
+    local ent = s.vehicle or s.ped
+    return ent and DoesEntityExist(ent) and GetEntityCoords(ent) or nil
+end
+
 local function finish(src, s)
     local profile = s.profile
-    local ctx = { mult = 1.0 }
+    local where = targetCoords(s) or playerCoords(src)
+    local tipped = World.tipApplies(profile.id, where)
+    local ctx = { mult = 1.0, lootMult = tipped and config.World.tips.lootMultiplier or 1.0 }
 
     if profile.kind == 'prop' then
         stripped[s.key] = {
@@ -168,35 +177,60 @@ local function finish(src, s)
         }
         publishSpots()
         ctx.sourceModel = s.model
+    elseif profile.kind == 'ped' then
+        if DoesEntityExist(s.ped) then Entity(s.ped).state:set('thief:robbed', true, true) end
     else
         local state = Entity(s.vehicle).state
-        if profile.part == 'cat' then
-            state:set('scrap:cat', true, true)
-        else
-            local wheels = state['scrap:wheels'] or {}
+        if profile.part == 'wheel' then
+            local wheels = state['thief:wheels'] or {}
             wheels[tostring(s.wheel)] = true
-            state:set('scrap:wheels', wheels, true)
+            state:set('thief:wheels', wheels, true)
+        elseif profile.part == 'glovebox' then
+            state:set('thief:glovebox', s.window or 0, true)
+        else
+            state:set('thief:' .. profile.part, true, true)
         end
         ctx.mult = config.Vehicles.tierByHash[s.vehModel] or 1.0
         ctx.description = locale('loot_vehicle_desc', s.vehLabel or 'vehicle', s.plate)
     end
 
-    local queued = {}
+    local queued, pocketed = {}, {}
     for _, entry in ipairs(rollLoot(profile, ctx)) do
-        local id = Loot.queue(src, entry)
-        queued[#queued + 1] = { id = id, model = entry.modelHash, carry = entry.carry or false }
+        local direct = profile.directLoot and not entry.carry
+        if direct and Loot.canCarryAll(src, entry.items) then
+            Loot.giveAll(src, entry.items)
+            for _, it in ipairs(entry.items) do
+                pocketed[#pocketed + 1] = ('%dx %s'):format(it.count, itemLabel(it.item))
+            end
+        else
+            local id = Loot.queue(src, entry)
+            queued[#queued + 1] = { id = id, model = entry.modelHash, carry = entry.carry or false }
+        end
     end
 
-    local xp = Rep.add(src, profile.rep or 1)
+    -- Rep: less for working the same patch, more for following the tip.
+    local repeatMult, repeated = World.repetition(src, where)
+    local amount = (profile.rep or 1) * repeatMult * (tipped and config.World.tips.repMultiplier or 1.0)
+    local xp = Rep.add(src, math.max(0, math.floor(amount + 0.5)))
+    local areaHeat = World.add(where, profile.heat or 1)
+
     lastFinish[src] = os.time()
     endSession(src)
     recent[src] = { token = s.token, profile = profile, expires = os.time() + 30 }
 
-    lib.print.debug(('%s finished %s (%d loot drops)'):format(src, profile.id, #queued))
-    return { loot = queued, xp = xp }
+    lib.print.debug(('%s finished %s (%d drops, %d pocketed, area heat %d)'):format(src, profile.id, #queued, #pocketed, areaHeat))
+    return {
+        loot = queued,
+        pocketed = pocketed,
+        xp = xp,
+        repeated = repeated,
+        tipped = tipped,
+        areaHeat = areaHeat,
+        maxHeat = config.World.maxHeat,
+    }
 end
 
-lib.callback.register('cr-scraptheft:begin', function(source, profileId, target)
+lib.callback.register('cr-thief:begin', function(source, profileId, target)
     local profile = profiles[profileId]
     if not profile or type(target) ~= 'table' then return false end
 
@@ -231,6 +265,13 @@ lib.callback.register('cr-scraptheft:begin', function(source, profileId, target)
         s.key = Shared.spotId(model, coords)
         if stripped[s.key] then return false, 'already_stripped' end
         s.model, s.coords, s.heading = model, coords, tonumber(target.heading) or 0.0
+    elseif profile.kind == 'ped' then
+        local netId = tonumber(target.netId) or 0
+        local ped = NetworkGetEntityFromNetworkId(netId)
+        if ped == 0 or not DoesEntityExist(ped) or GetEntityType(ped) ~= 1 or IsPedAPlayer(ped) then return false end
+        if #(pcoords - GetEntityCoords(ped)) > 3.5 then return false, 'too_far' end
+        if Entity(ped).state['thief:robbed'] then return false, 'already_stripped' end
+        s.key, s.ped = ('ped:%d'):format(netId), ped
     else
         local netId = tonumber(target.netId) or 0
         local veh = NetworkGetEntityFromNetworkId(netId)
@@ -245,14 +286,19 @@ lib.callback.register('cr-scraptheft:begin', function(source, profileId, target)
         local state = Entity(veh).state
         if profile.part == 'cat' then
             if config.Vehicles.electricHashes[model] then return false, 'no_cat' end
-            if state['scrap:cat'] then return false, 'already_stripped' end
+            if state['thief:cat'] then return false, 'already_stripped' end
             s.key = ('cat:%d'):format(netId)
-        else
+        elseif profile.part == 'wheel' then
             local wheel = tonumber(target.wheel)
             if not wheel or wheel < 0 or wheel > 3 then return false end
-            if (state['scrap:wheels'] or {})[tostring(wheel)] then return false, 'already_stripped' end
+            if (state['thief:wheels'] or {})[tostring(wheel)] then return false, 'already_stripped' end
             s.key = ('wheel:%d:%d'):format(netId, wheel)
             s.wheel = wheel
+        else
+            local key = 'thief:' .. profile.part
+            if state[key] ~= nil then return false, 'already_stripped' end
+            s.key = ('%s:%d'):format(profile.part, netId)
+            s.window = math.floor(tonumber(target.window) or 0) == 1 and 1 or 0
         end
 
         local plate = trim(GetVehicleNumberPlateText(veh))
@@ -263,16 +309,24 @@ lib.callback.register('cr-scraptheft:begin', function(source, profileId, target)
     end
 
     if locks[s.key] then return false, 'in_use' end
+
+    local where = targetCoords(s) or pcoords
+    if World.locked(where) then return false, 'area_locked' end
+
     locks[s.key] = source
 
     local _, level = Rep.level(source)
     s.speed = level.speed
     sessions[source] = s
 
-    return true, s.token, s.speed
+    return true, s.token, {
+        speed = s.speed,
+        heatMult = World.multiplier(where),
+        tipped = World.tipApplies(profile.id, where),
+    }
 end)
 
-lib.callback.register('cr-scraptheft:stage', function(source, token, index)
+lib.callback.register('cr-thief:stage', function(source, token, index)
     local s = sessions[source]
     if not s or s.token ~= token or index ~= s.stage + 1 then return false end
 
@@ -287,7 +341,7 @@ lib.callback.register('cr-scraptheft:stage', function(source, token, index)
         return false, 'too_fast'
     end
 
-    local where = s.coords or (DoesEntityExist(s.vehicle) and GetEntityCoords(s.vehicle))
+    local where = targetCoords(s)
     if not where or #(playerCoords(source) - where) > sec.maxDistance then
         endSession(source)
         return false, 'too_far'
@@ -310,14 +364,14 @@ lib.callback.register('cr-scraptheft:stage', function(source, token, index)
     return true, finish(source, s)
 end)
 
-lib.callback.register('cr-scraptheft:cancel', function(source, token)
+lib.callback.register('cr-thief:cancel', function(source, token)
     local s = sessions[source]
     if s and s.token == token then endSession(source) end
     return true
 end)
 
 ---Debris (dropped panels, cinder blocks) and temporary props (car jack) spawned by the client.
-lib.callback.register('cr-scraptheft:registerDebris', function(source, token, netId, temporary)
+lib.callback.register('cr-thief:registerDebris', function(source, token, netId, temporary)
     local s = sessions[source]
     if not s or s.token ~= token then
         s = recent[source]

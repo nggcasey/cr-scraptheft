@@ -44,7 +44,7 @@ local active = {}
 
 local function rotate(buyer)
     active[buyer.id] = math.random(#buyer.locations)
-    GlobalState[('scrap:buyer:%s'):format(buyer.id)] = active[buyer.id]
+    GlobalState[('thief:buyer:%s'):format(buyer.id)] = active[buyer.id]
 end
 
 for _, buyer in pairs(buyers) do
@@ -100,7 +100,7 @@ local function appraise(src, buyer, item, amount, bonus)
     return math.floor(total * mult), removal, amount - remaining
 end
 
-lib.callback.register('cr-scraptheft:market', function(source, buyerId)
+lib.callback.register('cr-thief:market', function(source, buyerId)
     local buyer = buyers[buyerId]
     if not buyer or not buyerNear(source, buyer) then return end
 
@@ -133,7 +133,7 @@ lib.callback.register('cr-scraptheft:market', function(source, buyerId)
     return { items = list, rep = rep }
 end)
 
-lib.callback.register('cr-scraptheft:sell', function(source, buyerId, item, amount)
+lib.callback.register('cr-thief:sell', function(source, buyerId, item, amount)
     local buyer = buyers[buyerId]
     amount = math.floor(tonumber(amount) or 0)
     if not buyer or not buyer.items[item] or amount < 1 then return false end
@@ -158,7 +158,7 @@ lib.callback.register('cr-scraptheft:sell', function(source, buyerId, item, amou
     return true, payout
 end)
 
-lib.callback.register('cr-scraptheft:tipOff', function(source, buyerId)
+lib.callback.register('cr-thief:tipOff', function(source, buyerId)
     local buyer = buyers[buyerId]
     local target = buyer and buyer.tipsOff and buyers[buyer.tipsOff]
     if not target or not buyerNear(source, buyer) then return end
